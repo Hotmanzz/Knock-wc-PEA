@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ทายผลบอลโลก 2026 — รอบน็อคเอาท์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch-dark:#072A20;
+    --pitch:#0E3D2C;
+    --pitch-light:#13503A;
+    --card:#0F3A2A;
+    --line:rgba(244,241,232,0.14);
+    --gold:#D8B354;
+    --gold-soft:#E8CD7E;
+    --red:#D9533A;
+    --cream:#F4F1E8;
+    --cream-dim:#B9C9BE;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top, var(--pitch-light) 0%, var(--pitch) 45%, var(--pitch-dark) 100%);
+    color:var(--cream);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    background-attachment:fixed;
+  }
+  .stripes{
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.05;
+    background:repeating-linear-gradient(115deg, transparent 0 60px, #fff 60px 62px);
+  }
+  .wrap{position:relative; z-index:1; max-width:780px; margin:0 auto; padding:28px 18px 70px;}
+
+  header{text-align:center; margin-bottom:22px;}
+  .eyebrow{
+    font-family:'Roboto Mono',monospace; letter-spacing:0.22em; text-transform:uppercase;
+    font-size:11px; color:var(--gold-soft); margin-bottom:8px;
+  }
+  h1{
+    font-family:'Anton',sans-serif; font-weight:400; text-transform:uppercase;
+    font-size:clamp(28px,7vw,42px); letter-spacing:0.02em; margin:0; line-height:1.05;
+    color:var(--cream);
+  }
+  h1 span{color:var(--gold);}
+  .sub{color:var(--cream-dim); font-size:13.5px; margin-top:8px;}
+  .hero-art{width:160px; height:auto; display:block; margin:0 auto 4px; filter:drop-shadow(0 6px 10px rgba(0,0,0,0.35));}
+
+  nav.tabs{
+    display:flex; gap:6px; background:rgba(0,0,0,0.22); border:1px solid var(--line);
+    border-radius:12px; padding:5px; margin-bottom:22px;
+  }
+  nav.tabs button{
+    flex:1; background:transparent; border:none; color:var(--cream-dim);
+    font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px; padding:10px 6px;
+    border-radius:9px; cursor:pointer; transition:all .15s ease;
+  }
+  nav.tabs button.active{background:var(--gold); color:var(--pitch-dark);}
+  nav.tabs button:not(.active):hover{background:rgba(255,255,255,0.06); color:var(--cream);}
+
+  .panel{display:none;}
+  .panel.active{display:block; animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:18px; margin-bottom:14px;
+  }
+  .card h2{
+    font-family:'Anton',sans-serif; font-weight:400; text-transform:uppercase;
+    font-size:17px; letter-spacing:0.03em; margin:0 0 14px; color:var(--gold-soft);
+  }
+  .row{display:flex; gap:8px; margin-bottom:10px;}
+  input[type=text], input[type=number], select{
+    background:rgba(0,0,0,0.28); border:1px solid var(--line); color:var(--cream);
+    border-radius:8px; padding:9px 10px; font-family:'Inter',sans-serif; font-size:14px;
+    width:100%; outline:none;
+  }
+  input:focus, select:focus{border-color:var(--gold);}
+  input[type=number]{text-align:center; font-family:'Roboto Mono',monospace; font-weight:700;}
+  button.btn{
+    font-family:'Inter',sans-serif; font-weight:700; font-size:13.5px; border:none;
+    border-radius:8px; padding:10px 16px; cursor:pointer; transition:opacity .15s;
+  }
+  button.btn:hover{opacity:0.88;}
+  .btn-gold{background:var(--gold); color:var(--pitch-dark);}
+  .btn-ghost{background:rgba(255,255,255,0.07); color:var(--cream); border:1px solid var(--line);}
+  .btn-red{background:rgba(217,83,58,0.18); color:#F2A18F; border:1px solid rgba(217,83,58,0.35);}
+  .btn-red:hover{background:rgba(217,83,58,0.3);}
+
+  .player-chip{
+    display:flex; align-items:center; justify-content:space-between;
+    background:rgba(0,0,0,0.2); border:1px solid var(--line); border-radius:9px;
+    padding:9px 12px; margin-bottom:8px; font-weight:600; font-size:14px;
+  }
+  .player-chip .x{cursor:pointer; color:var(--cream-dim); font-size:13px;}
+  .player-chip .x:hover{color:var(--red);}
+  .empty{color:var(--cream-dim); font-size:13.5px; text-align:center; padding:18px 6px; line-height:1.6;}
+  .hint{color:var(--cream-dim); font-size:12px; margin-top:-4px; margin-bottom:10px;}
+
+  .match-card{margin-bottom:12px;}
+  .match-head{
+    display:flex; align-items:center; justify-content:space-between; cursor:pointer;
+  }
+  .match-teams{font-family:'Anton',sans-serif; font-size:16px; letter-spacing:0.01em; text-transform:uppercase;}
+  .round-tag{
+    font-family:'Roboto Mono',monospace; font-size:10.5px; letter-spacing:0.1em;
+    color:var(--gold-soft); text-transform:uppercase; margin-bottom:4px; display:block;
+  }
+  .chev{color:var(--cream-dim); font-size:13px; transition:transform .2s;}
+  .match-body{display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--line);}
+  .match-body.open{display:block;}
+  .result-banner{
+    display:flex; align-items:center; justify-content:center; gap:14px;
+    font-family:'Roboto Mono',monospace; font-weight:700; font-size:22px;
+    background:rgba(0,0,0,0.22); border-radius:10px; padding:10px; margin-bottom:14px;
+  }
+  .result-banner .vs{color:var(--cream-dim); font-size:13px;}
+  .pen-note{
+    text-align:center; font-size:11.5px; color:var(--gold-soft); margin-top:-6px; margin-bottom:12px;
+  }
+  .sub-section-title{
+    font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--cream-dim);
+    margin:14px 0 8px;
+  }
+  .pred-row{
+    display:grid; grid-template-columns:1fr auto auto auto; gap:8px; align-items:center;
+    margin-bottom:8px;
+  }
+  .pred-row .pname{font-size:13.5px; font-weight:600;}
+  .pred-row input[type=number]{width:48px; padding:7px 4px;}
+  .pred-row .dash{color:var(--cream-dim);}
+  .pred-row input[disabled]{opacity:0.35; cursor:not-allowed;}
+  .pen-select-row{display:flex; align-items:center; gap:8px; margin-top:-2px; margin-bottom:8px;}
+  .pen-select-row select{width:auto; flex:1;}
+  .pen-select-row label{font-size:12px; color:var(--cream-dim); white-space:nowrap;}
+
+  .actual-grid{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:8px;}
+  .actual-grid input{width:64px; font-size:18px;}
+  .actual-grid .teamlbl{font-size:12px; color:var(--cream-dim); text-align:center; width:64px;}
+
+  .points-badge{
+    font-family:'Roboto Mono',monospace; font-weight:700; font-size:13px;
+    background:rgba(216,179,84,0.15); color:var(--gold-soft); border-radius:6px;
+    padding:3px 9px; white-space:nowrap;
+  }
+  .breakdown{font-size:11px; color:var(--cream-dim); margin-top:2px;}
+
+  .lb-row{
+    display:flex; align-items:center; gap:14px; background:rgba(0,0,0,0.2);
+    border:1px solid var(--line); border-radius:11px; padding:13px 16px; margin-bottom:9px;
+  }
+  .lb-rank{
+    font-family:'Anton',sans-serif; font-size:22px; width:34px; text-align:center; color:var(--cream-dim);
+  }
+  .lb-row.r1 .lb-rank{color:#E8CD7E;}
+  .lb-row.r2 .lb-rank{color:#D7DCE0;}
+  .lb-row.r3 .lb-rank{color:#D99B6C;}
+  .lb-row.r1{border-color:rgba(216,179,84,0.5); background:rgba(216,179,84,0.08);}
+  .lb-name{flex:1; font-weight:700; font-size:15px;}
+  .lb-score{
+    font-family:'Roboto Mono',monospace; font-weight:700; font-size:22px; color:var(--gold);
+    letter-spacing:0.03em; min-width:54px; text-align:right;
+  }
+
+  .settings-line{display:flex; align-items:center; gap:10px; font-size:13px; color:var(--cream-dim);}
+  .settings-line select{width:auto; padding:7px 10px;}
+
+  .toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    background:var(--gold); color:var(--pitch-dark); font-weight:700; font-size:13px;
+    padding:9px 18px; border-radius:30px; opacity:0; transition:opacity .25s; z-index:50;
+    pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+  ::placeholder{color:#7E9C8C;}
+</style>
+</head>
+<body>
+<div class="stripes"></div>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">World Cup 2026 · Knockout Pool</div>
+    <svg class="hero-art" viewBox="0 0 220 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <radialGradient id="ballShine" cx="35%" cy="30%" r="65%">
+          <stop offset="0%" stop-color="#F4F1E8"/>
+          <stop offset="100%" stop-color="#D8C9A8"/>
+        </radialGradient>
+        <linearGradient id="cupGold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#E8CD7E"/>
+          <stop offset="100%" stop-color="#B8862E"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="110" cy="100" rx="70" ry="6" fill="#000" opacity="0.18"/>
+      <!-- trophy -->
+      <g transform="translate(78,18)">
+        <path d="M8 4 H46 L42 34 Q27 46 12 34 Z" fill="url(#cupGold)" stroke="#7A5A1E" stroke-width="1.2"/>
+        <path d="M8 8 C-4 8 -4 26 10 27" fill="none" stroke="#B8862E" stroke-width="3" stroke-linecap="round"/>
+        <path d="M46 8 C58 8 58 26 44 27" fill="none" stroke="#B8862E" stroke-width="3" stroke-linecap="round"/>
+        <rect x="22" y="40" width="10" height="10" fill="#B8862E"/>
+        <path d="M14 50 H40 L37 58 H17 Z" fill="#8A661F"/>
+        <circle cx="27" cy="16" r="3" fill="#F4F1E8" opacity="0.7"/>
+      </g>
+      <!-- football -->
+      <g transform="translate(146,56)">
+        <circle cx="0" cy="0" r="22" fill="url(#ballShine)" stroke="#3A2E18" stroke-width="1.4"/>
+        <path d="M0 -22 L6 -8 L-6 -8 Z M-22 0 L-8 -6 L-8 6 Z M22 0 L8 6 L8 -6 Z M0 22 L6 8 L-6 8 Z M-6 -8 L6 -8 L8 6 L0 12 L-8 6 Z" fill="#1E2A22" opacity="0.85"/>
+      </g>
+      <!-- stars -->
+      <g fill="#E8CD7E" opacity="0.9">
+        <path d="M40 20 l2.4 5 5.4.5-4 3.7 1.1 5.3L40 31.6 35.1 34.5l1.1-5.3-4-3.7 5.4-.5z"/>
+        <path d="M188 28 l1.8 3.8 4 .4-3 2.8.9 4-3.7-2-3.7 2 .9-4-3-2.8 4-.4z"/>
+        <path d="M58 78 l1.6 3.3 3.6.4-2.6 2.4.8 3.5-3.4-1.8-3.4 1.8.8-3.5-2.6-2.4 3.6-.4z"/>
+      </g>
+    </svg>
+    <h1>ทายผล<span>บอลโลก</span></h1>
+    <div class="sub">บันทึกผลทาย คำนวณคะแนนอัตโนมัติ แชร์สกอร์บอร์ดให้เพื่อน</div>
+    <div class="sub" style="margin-top:4px; font-size:11.5px; color:var(--gold-soft);">ข้อมูลซิงค์ข้ามทุกเครื่องที่เปิดไฟล์นี้ — ใครเปิดก็เห็นข้อมูลเดียวกัน</div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="players" class="active">👥 ผู้เล่น</button>
+    <button data-tab="matches">⚽ แมตช์</button>
+    <button data-tab="leaderboard">🏆 สกอร์บอร์ด</button>
+  </nav>
+
+  <div class="card" id="whoamiCard" style="margin-bottom:18px;">
+    <h2 style="margin-bottom:10px;">🙋 คุณคือใคร?</h2>
+    <select id="whoamiSelect">
+      <option value="">— แอดมิน / ดูทั้งหมด —</option>
+    </select>
+    <div class="hint" style="margin-top:8px; margin-bottom:0;">เลือกชื่อตัวเองเพื่อทายผลของคุณคนเดียว เลือก "แอดมิน" เพื่อจัดการผู้เล่น/แมตช์/ผลจริง</div>
+  </div>
+
+  <!-- PLAYERS -->
+  <section class="panel active" id="panel-players">
+    <div class="card">
+      <h2>👥 เพิ่มผู้เล่น</h2>
+      <div class="row">
+        <input type="text" id="newPlayerName" placeholder="ชื่อผู้เล่น (สูงสุด 10 คน)" maxlength="24">
+        <button class="btn btn-gold" id="addPlayerBtn">เพิ่ม</button>
+      </div>
+      <div id="playerList"></div>
+      <div class="empty" id="playerEmpty" style="display:none;">⚽ ยังไม่มีผู้เล่น เพิ่มชื่อเพื่อนๆ ก่อนเริ่มทายผลครับ</div>
+    </div>
+  </section>
+
+  <!-- MATCHES -->
+  <section class="panel" id="panel-matches">
+    <div class="card" id="scoringSettingsCard">
+      <h2>🎯 ตั้งค่าการให้คะแนน</h2>
+      <div class="settings-line">
+        ทายสกอร์เป๊ะ ให้
+        <select id="exactPointsSelect">
+          <option value="3">3 คะแนน</option>
+          <option value="4" selected>4 คะแนน</option>
+          <option value="5">5 คะแนน</option>
+        </select>
+        <span>(ทายผลถูก 1 · ผลต่างถูก 2)</span>
+      </div>
+    </div>
+
+    <div class="card" id="addMatchCard">
+      <h2>📅 เพิ่มแมตช์</h2>
+      <div class="row">
+        <select id="newRound">
+          <option>รอบ 32 ทีม</option>
+          <option>รอบ 16 ทีม</option>
+          <option>รอบ 8 ทีม</option>
+          <option>รอบรองชนะเลิศ</option>
+          <option>ชิงอันดับ 3</option>
+          <option>ชิงชนะเลิศ</option>
+        </select>
+      </div>
+      <div class="row">
+        <input type="text" id="newTeamA" placeholder="ทีม A">
+        <input type="text" id="newTeamB" placeholder="ทีม B">
+      </div>
+      <div class="row">
+        <input type="datetime-local" id="newKickoff">
+      </div>
+      <div class="hint">ตั้งเวลาเริ่มแข่ง (ไม่บังคับ) — ถ้าตั้งไว้ ระบบจะปิดรับการทายของทุกคนทันทีที่ถึงเวลานี้</div>
+      <button class="btn btn-gold" id="addMatchBtn" style="width:100%;">+ เพิ่มแมตช์</button>
+    </div>
+
+    <div id="matchList"></div>
+    <div class="empty" id="matchEmpty" style="display:none;">📅 ยังไม่มีแมตช์ เพิ่มแมตช์แรกได้เลยครับ</div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="panel" id="panel-leaderboard">
+    <div class="card">
+      <h2>🏆 สกอร์บอร์ดรวม</h2>
+      <div id="lbList"></div>
+      <div class="empty" id="lbEmpty" style="display:none;">🏆 ยังไม่มีคะแนน เพิ่มผู้เล่นและบันทึกผลแมตช์ก่อนครับ</div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const STORE_KEY = 'wc-knockout-pool-data';
+const DEFAULT_PLAYERS = ['Luis','TEM','GUNNER','MOB','TACK'].map(name=>({ id: 'p_'+name.toLowerCase(), name }));
+const DEFAULT_MATCHES = [
+  ['South Africa','Canada','2026-06-28T19:00:00Z'],
+  ['Brazil','Japan','2026-06-29T17:00:00Z'],
+  ['Germany','Paraguay','2026-06-29T20:30:00Z'],
+  ['Netherlands','Morocco','2026-06-30T01:00:00Z'],
+  ["Côte d'Ivoire",'Norway','2026-06-30T17:00:00Z'],
+  ['France','Sweden','2026-06-30T21:00:00Z'],
+  ['USA','Bosnia and Herzegovina','2026-07-02T00:00:00Z'],
+  ['Australia','Egypt','2026-07-03T18:00:00Z'],
+  ['Argentina','Cape Verde','2026-07-03T22:00:00Z'],
+  ['Mexico','Ecuador','2026-07-01T01:00:00Z'],
+  ['England','Congo DR','2026-07-01T16:00:00Z'],
+  ['Belgium','Senegal','2026-07-01T20:00:00Z'],
+  ['Spain','Austria','2026-07-03T03:00:00Z'],
+  ['Switzerland','Algeria','2026-07-03T03:00:00Z'],
+  ['Portugal','Croatia','2026-07-02T23:00:00Z'],
+  ['Colombia','Ghana','2026-07-04T01:30:00Z'],
+].map(([teamA,teamB,kickoff])=>({
+  id: 'm_'+teamA.toLowerCase().replace(/[^a-z]/g,'')+'_'+teamB.toLowerCase().replace(/[^a-z]/g,''),
+  round: 'รอบ 32 ทีม', teamA, teamB, kickoff,
+  predictions: {}, actual: { scoreA:null, scoreB:null }
+}));
+let state = { players: DEFAULT_PLAYERS.slice(), matches: DEFAULT_MATCHES.slice(), settings: { exactPoints: 4 } };
+let openMatchId = null;
+let currentPlayerId = '';
+
+const ROUND_ORDER = ['รอบ 32 ทีม','รอบ 16 ทีม','รอบ 8 ทีม','รอบรองชนะเลิศ','ชิงอันดับ 3','ชิงชนะเลิศ'];
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function isLocked(m){
+  if(!m.kickoff) return false;
+  return new Date() >= new Date(m.kickoff);
+}
+
+const FLAGS = {
+  'south africa':'🇿🇦','canada':'🇨🇦','brazil':'🇧🇷','japan':'🇯🇵','germany':'🇩🇪','paraguay':'🇵🇾',
+  'netherlands':'🇳🇱','morocco':'🇲🇦',"cote d'ivoire":'🇨🇮','ivory coast':'🇨🇮','norway':'🇳🇴',
+  'france':'🇫🇷','sweden':'🇸🇪','usa':'🇺🇸','united states':'🇺🇸','bosnia and herzegovina':'🇧🇦','bosnia':'🇧🇦',
+  'australia':'🇦🇺','egypt':'🇪🇬','argentina':'🇦🇷','cape verde':'🇨🇻','cabo verde':'🇨🇻',
+  'mexico':'🇲🇽','spain':'🇪🇸','portugal':'🇵🇹','belgium':'🇧🇪','england':'🏴','croatia':'🇭🇷','ghana':'🇬🇭',
+  'senegal':'🇸🇳','iraq':'🇮🇶','tunisia':'🇹🇳','turkiye':'🇹🇷','turkey':'🇹🇷','uruguay':'🇺🇾','saudi arabia':'🇸🇦',
+  'new zealand':'🇳🇿','iran':'🇮🇷','ir iran':'🇮🇷','algeria':'🇩🇿','austria':'🇦🇹','jordan':'🇯🇴','colombia':'🇨🇴',
+  'uzbekistan':'🇺🇿','congo dr':'🇨🇩','dr congo':'🇨🇩','democratic republic of the congo':'🇨🇩',
+  'scotland':'🏴','switzerland':'🇨🇭','south korea':'🇰🇷','korea republic':'🇰🇷','qatar':'🇶🇦',
+  'ecuador':'🇪🇨','haiti':'🇭🇹','panama':'🇵🇦','curacao':'🇨🇼','poland':'🇵🇱','italy':'🇮🇹',
+  'denmark':'🇩🇰','serbia':'🇷🇸','czechia':'🇨🇿','czech republic':'🇨🇿','bosnia & herzegovina':'🇧🇦'
+};
+
+function getFlag(name){
+  if(!name) return '⚽';
+  const key = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  return FLAGS[key] || '⚽';
+}
+
+function formatKickoff(iso){
+  if(!iso) return '';
+  try{
+    return new Date(iso).toLocaleString('th-TH', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  }catch(e){ return ''; }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1500);
+}
+
+async function loadState(){
+  try{
+    const result = await window.storage.get(STORE_KEY, true);
+    if(result && result.value){
+      const parsed = JSON.parse(result.value);
+      state = Object.assign({players:[],matches:[],settings:{exactPoints:4}}, parsed);
+    }
+  }catch(e){
+    // no saved data yet, or storage unavailable — start fresh
+  }
+  render();
+}
+
+async function saveState(){
+  try{
+    await window.storage.set(STORE_KEY, JSON.stringify(state), true);
+  }catch(e){
+    console.error('บันทึกข้อมูลไม่สำเร็จ', e);
+    showToast('บันทึกไม่สำเร็จ ลองอีกครั้ง');
+  }
+}
+
+// ---------- Tabs ----------
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab === 'leaderboard') renderLeaderboard();
+  });
+});
+
+// ---------- Who am I ----------
+document.getElementById('whoamiSelect').addEventListener('change', e=>{
+  currentPlayerId = e.target.value;
+  renderMatches();
+});
+
+function renderWhoAmI(){
+  const sel = document.getElementById('whoamiSelect');
+  const prev = currentPlayerId;
+  sel.innerHTML = '<option value="">— แอดมิน / ดูทั้งหมด —</option>' +
+    state.players.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  if(state.players.some(p=>p.id===prev)){
+    sel.value = prev;
+  } else {
+    currentPlayerId = '';
+    sel.value = '';
+  }
+}
+
+// ---------- Players ----------
+document.getElementById('addPlayerBtn').addEventListener('click', addPlayer);
+document.getElementById('newPlayerName').addEventListener('keydown', e=>{ if(e.key==='Enter') addPlayer(); });
+
+function addPlayer(){
+  const input = document.getElementById('newPlayerName');
+  const name = input.value.trim();
+  if(!name) return;
+  if(state.players.length >= 10){ showToast('ครบ 10 คนแล้วครับ'); return; }
+  if(state.players.some(p=>p.name === name)){ showToast('มีชื่อนี้อยู่แล้ว'); return; }
+  state.players.push({ id: uid(), name });
+  input.value = '';
+  saveState();
+  renderPlayers();
+  renderWhoAmI();
+  renderMatches();
+}
+
+function removePlayer(id){
+  state.players = state.players.filter(p=>p.id!==id);
+  state.matches.forEach(m=>{ delete m.predictions[id]; });
+  saveState();
+  renderPlayers();
+  renderWhoAmI();
+  renderMatches();
+}
+
+function renderPlayers(){
+  const list = document.getElementById('playerList');
+  const empty = document.getElementById('playerEmpty');
+  list.innerHTML = '';
+  empty.style.display = state.players.length ? 'none' : 'block';
+  state.players.forEach(p=>{
+    const div = document.createElement('div');
+    div.className = 'player-chip';
+    div.innerHTML = `<span>${escapeHtml(p.name)}</span><span class="x" data-id="${p.id}">✕ ลบ</span>`;
+    div.querySelector('.x').addEventListener('click', ()=>removePlayer(p.id));
+    list.appendChild(div);
+  });
+}
+
+// ---------- Matches ----------
+document.getElementById('exactPointsSelect').addEventListener('change', e=>{
+  state.settings.exactPoints = parseInt(e.target.value, 10);
+  saveState();
+  renderMatches();
+});
+
+document.getElementById('addMatchBtn').addEventListener('click', ()=>{
+  const round = document.getElementById('newRound').value;
+  const teamA = document.getElementById('newTeamA').value.trim();
+  const teamB = document.getElementById('newTeamB').value.trim();
+  const kickoffRaw = document.getElementById('newKickoff').value;
+  if(!teamA || !teamB){ showToast('กรอกชื่อทีมให้ครบก่อนครับ'); return; }
+  const match = {
+    id: uid(), round, teamA, teamB,
+    kickoff: kickoffRaw ? new Date(kickoffRaw).toISOString() : null,
+    predictions: {}, // playerId -> {scoreA, scoreB}
+    actual: { scoreA:null, scoreB:null }
+  };
+  state.matches.push(match);
+  document.getElementById('newTeamA').value = '';
+  document.getElementById('newTeamB').value = '';
+  document.getElementById('newKickoff').value = '';
+  openMatchId = match.id;
+  saveState();
+  renderMatches();
+  showToast('เพิ่มแมตช์แล้ว');
+});
+
+function removeMatch(id){
+  state.matches = state.matches.filter(m=>m.id!==id);
+  saveState();
+  renderMatches();
+}
+
+function getOutcome(a,b){
+  if(a===null||b===null||a===''||b==='') return null;
+  if(Number(a) > Number(b)) return 'A';
+  if(Number(b) > Number(a)) return 'B';
+  return 'DRAW';
+}
+
+function calcPoints(pred, actual, exactPoints){
+  if(actual.scoreA===null || actual.scoreB===null || actual.scoreA==='' || actual.scoreB===''){
+    return { points:0, breakdown:[] };
+  }
+  if(pred.scoreA===undefined || pred.scoreB===undefined || pred.scoreA===null || pred.scoreB===null || pred.scoreA==='' || pred.scoreB===''){
+    return { points:0, breakdown:[] };
+  }
+  let points = 0; const breakdown = [];
+  const predOutcome = getOutcome(pred.scoreA, pred.scoreB);
+  const actOutcome = getOutcome(actual.scoreA, actual.scoreB);
+
+  if(predOutcome && actOutcome && predOutcome === actOutcome){
+    points += 1; breakdown.push('ทายผลถูก +1');
+  }
+  const exact = Number(pred.scoreA)===Number(actual.scoreA) && Number(pred.scoreB)===Number(actual.scoreB);
+  const diffMatch = (Number(pred.scoreA)-Number(pred.scoreB)) === (Number(actual.scoreA)-Number(actual.scoreB));
+
+  if(exact){
+    points += exactPoints; breakdown.push(`สกอร์เป๊ะ +${exactPoints}`);
+  } else if(diffMatch){
+    points += 2; breakdown.push('ผลต่างถูก +2');
+  }
+
+  return { points, breakdown };
+}
+
+function sortedMatches(){
+  return [...state.matches].sort((m1,m2)=>{
+    const r1 = ROUND_ORDER.indexOf(m1.round), r2 = ROUND_ORDER.indexOf(m2.round);
+    return r1 - r2;
+  });
+}
+
+function renderMatches(){
+  const viewingSelf = currentPlayerId && state.players.some(p=>p.id===currentPlayerId);
+  document.getElementById('scoringSettingsCard').style.display = viewingSelf ? 'none' : '';
+  document.getElementById('addMatchCard').style.display = viewingSelf ? 'none' : '';
+
+  document.getElementById('exactPointsSelect').value = state.settings.exactPoints;
+  const list = document.getElementById('matchList');
+  const empty = document.getElementById('matchEmpty');
+  list.innerHTML = '';
+  empty.style.display = state.matches.length ? 'none' : 'block';
+
+  sortedMatches().forEach(m=>{
+    const card = document.createElement('div');
+    card.className = 'card match-card';
+    const isOpen = openMatchId === m.id;
+    const actualKnown = m.actual.scoreA!==null && m.actual.scoreA!=='' && m.actual.scoreB!==null && m.actual.scoreB!=='';
+    const actualOutcome = actualKnown ? getOutcome(m.actual.scoreA, m.actual.scoreB) : null;
+
+    const locked = isLocked(m);
+    const statusHtml = m.kickoff
+      ? `<span class="round-tag" style="display:inline-block; margin-left:8px; color:${locked?'#F2A18F':'#9FD9B4'};">${locked?'🔒 ปิดรับทายแล้ว':'🟢 เปิดรับทาย'} · ${formatKickoff(m.kickoff)}</span>`
+      : '';
+
+    card.innerHTML = `
+      <div class="match-head" data-id="${m.id}">
+        <div>
+          <span class="round-tag">${escapeHtml(m.round)}</span>${statusHtml}
+          <span class="match-teams">${getFlag(m.teamA)} ${escapeHtml(m.teamA)} <span style="color:var(--cream-dim);font-size:12px;">vs</span> ${getFlag(m.teamB)} ${escapeHtml(m.teamB)}</span>
+        </div>
+        <span class="chev">${isOpen ? '▲' : '▼'}</span>
+      </div>
+      <div class="match-body ${isOpen?'open':''}" id="body-${m.id}"></div>
+    `;
+    card.querySelector('.match-head').addEventListener('click', ()=>{
+      openMatchId = (openMatchId === m.id) ? null : m.id;
+      renderMatches();
+    });
+    list.appendChild(card);
+
+    if(isOpen){
+      const body = card.querySelector(`#body-${m.id}`);
+      body.appendChild(buildMatchBody(m, actualKnown, actualOutcome));
+    }
+  });
+}
+
+function buildMatchBody(m, actualKnown, actualOutcome){
+  const wrap = document.createElement('div');
+  const locked = isLocked(m);
+  const viewingSelf = currentPlayerId && state.players.some(p=>p.id===currentPlayerId);
+
+  if(locked){
+    const lockBanner = document.createElement('div');
+    lockBanner.style.cssText = 'text-align:center; font-size:12.5px; color:#F2A18F; background:rgba(217,83,58,0.12); border:1px solid rgba(217,83,58,0.3); border-radius:8px; padding:8px; margin-bottom:14px;';
+    lockBanner.textContent = '🔒 เกมนี้เริ่มแล้ว ปิดรับการทายแล้วครับ';
+    wrap.appendChild(lockBanner);
+  }
+
+  // Actual result entry — admin can edit; players just see it (if known)
+  const actualTitle = document.createElement('div');
+  actualTitle.className = 'sub-section-title';
+  actualTitle.textContent = 'ผลจริง (หลัง 90/120 นาที ไม่รวมจุดโทษ)';
+  wrap.appendChild(actualTitle);
+
+  if(viewingSelf){
+    const display = document.createElement('div');
+    display.className = 'result-banner';
+    display.innerHTML = actualKnown
+      ? `${getFlag(m.teamA)} ${escapeHtml(m.teamA)} <span style="font-family:'Roboto Mono',monospace;">${m.actual.scoreA} – ${m.actual.scoreB}</span> ${getFlag(m.teamB)} ${escapeHtml(m.teamB)}`
+      : `<span class="vs">ยังไม่มีผล รอแอดมินอัปเดตหลังจบเกม</span>`;
+    wrap.appendChild(display);
+  } else {
+    const grid = document.createElement('div');
+    grid.className = 'actual-grid';
+    grid.innerHTML = `
+      <div><input type="number" min="0" value="${m.actual.scoreA ?? ''}" id="actA-${m.id}"><div class="teamlbl">${getFlag(m.teamA)} ${escapeHtml(m.teamA)}</div></div>
+      <span style="color:var(--cream-dim);">–</span>
+      <div><input type="number" min="0" value="${m.actual.scoreB ?? ''}" id="actB-${m.id}"><div class="teamlbl">${getFlag(m.teamB)} ${escapeHtml(m.teamB)}</div></div>
+    `;
+    wrap.appendChild(grid);
+
+    grid.querySelector(`#actA-${m.id}`).addEventListener('input', e=>{ m.actual.scoreA = e.target.value===''?'':parseInt(e.target.value,10); saveState(); refreshOpenMatchBody(); });
+    grid.querySelector(`#actB-${m.id}`).addEventListener('input', e=>{ m.actual.scoreB = e.target.value===''?'':parseInt(e.target.value,10); saveState(); refreshOpenMatchBody(); });
+  }
+  const playersToShow = viewingSelf ? state.players.filter(p=>p.id===currentPlayerId) : state.players;
+
+  const predTitle = document.createElement('div');
+  predTitle.className = 'sub-section-title';
+  predTitle.textContent = viewingSelf
+    ? `ผลทายของคุณ`
+    : `ผลทายของผู้เล่น (${state.players.length} คน)`;
+  wrap.appendChild(predTitle);
+
+  if(state.players.length === 0){
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = 'ยังไม่มีผู้เล่น ไปเพิ่มที่แท็บ "ผู้เล่น" ก่อนครับ';
+    wrap.appendChild(e);
+    return wrap;
+  }
+
+  playersToShow.forEach(p=>{
+    const pred = m.predictions[p.id] || { scoreA:'', scoreB:'' };
+    m.predictions[p.id] = pred;
+    const hasPrediction = pred.scoreA!=='' && pred.scoreA!=null && pred.scoreB!=='' && pred.scoreB!=null;
+
+    const row = document.createElement('div');
+    row.className = 'pred-row';
+    row.innerHTML = `
+      <span class="pname">${escapeHtml(p.name)}</span>
+      <input type="number" min="0" value="${pred.scoreA}" id="predA-${m.id}-${p.id}" ${locked?'disabled':''}>
+      <span class="dash">–</span>
+      <input type="number" min="0" value="${pred.scoreB}" id="predB-${m.id}-${p.id}" ${locked?'disabled':''}>
+    `;
+    wrap.appendChild(row);
+
+    row.querySelector(`#predA-${m.id}-${p.id}`).addEventListener('input', e=>{
+      pred.scoreA = e.target.value===''?'':parseInt(e.target.value,10); saveState(); refreshOpenMatchBody();
+    });
+    row.querySelector(`#predB-${m.id}-${p.id}`).addEventListener('input', e=>{
+      pred.scoreB = e.target.value===''?'':parseInt(e.target.value,10); saveState(); refreshOpenMatchBody();
+    });
+
+    if(actualKnown){
+      if(hasPrediction){
+        const { points, breakdown } = calcPoints(pred, m.actual, state.settings.exactPoints);
+        const badgeRow = document.createElement('div');
+        badgeRow.style.display = 'flex';
+        badgeRow.style.justifyContent = 'flex-end';
+        badgeRow.style.marginTop = '-4px';
+        badgeRow.style.marginBottom = '6px';
+        badgeRow.innerHTML = `<span class="points-badge">${points} คะแนน</span>`;
+        wrap.appendChild(badgeRow);
+        if(breakdown.length){
+          const bd = document.createElement('div');
+          bd.className = 'breakdown';
+          bd.style.textAlign = 'right';
+          bd.style.marginBottom = '6px';
+          bd.textContent = breakdown.join(' · ');
+          wrap.appendChild(bd);
+        }
+      } else {
+        const note = document.createElement('div');
+        note.className = 'breakdown';
+        note.style.textAlign = 'right';
+        note.style.marginBottom = '6px';
+        note.textContent = 'ไม่ได้เลือกทายคู่นี้';
+        wrap.appendChild(note);
+      }
+    }
+  });
+
+  if(!viewingSelf){
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-red';
+    delBtn.style.width = '100%';
+    delBtn.style.marginTop = '10px';
+    delBtn.textContent = 'ลบแมตช์นี้';
+    delBtn.addEventListener('click', ()=>{ if(confirm('ลบแมตช์นี้ใช่ไหม?')) removeMatch(m.id); });
+    wrap.appendChild(delBtn);
+  }
+
+  return wrap;
+}
+
+function refreshOpenMatchBody(){
+  // re-render just the open match body to reflect live point calc without losing scroll/tab
+  const id = openMatchId;
+  if(!id) return;
+  const m = state.matches.find(x=>x.id===id);
+  if(!m) return;
+  const body = document.getElementById('body-'+id);
+  if(!body) return;
+  const actualKnown = m.actual.scoreA!==null && m.actual.scoreA!=='' && m.actual.scoreB!==null && m.actual.scoreB!=='';
+  const actualOutcome = actualKnown ? getOutcome(m.actual.scoreA, m.actual.scoreB) : null;
+  body.innerHTML = '';
+  body.appendChild(buildMatchBody(m, actualKnown, actualOutcome));
+}
+
+// ---------- Leaderboard ----------
+function renderLeaderboard(){
+  const list = document.getElementById('lbList');
+  const empty = document.getElementById('lbEmpty');
+  list.innerHTML = '';
+
+  if(state.players.length === 0){
+    empty.style.display = 'block';
+    empty.textContent = 'ยังไม่มีผู้เล่น เพิ่มผู้เล่นที่แท็บ "ผู้เล่น" ก่อนครับ';
+    return;
+  }
+
+  const totals = state.players.map(p=>{
+    let total = 0;
+    state.matches.forEach(m=>{
+      const actualKnown = m.actual.scoreA!==null && m.actual.scoreA!=='' && m.actual.scoreB!==null && m.actual.scoreB!=='';
+      if(!actualKnown) return;
+      const pred = m.predictions[p.id];
+      if(!pred || pred.scoreA==='' || pred.scoreA==null || pred.scoreB==='' || pred.scoreB==null) return;
+      total += calcPoints(pred, m.actual, state.settings.exactPoints).points;
+    });
+    return { id: p.id, name: p.name, total };
+  }).sort((a,b)=>b.total - a.total);
+
+  empty.style.display = 'none';
+  totals.forEach((t,i)=>{
+    const div = document.createElement('div');
+    div.className = 'lb-row ' + (i===0?'r1':i===1?'r2':i===2?'r3':'');
+    const rankDisplay = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    div.innerHTML = `<div class="lb-rank">${rankDisplay}</div><div class="lb-name">${escapeHtml(t.name)}</div><div class="lb-score">⚽ ${t.total}</div>`;
+    list.appendChild(div);
+  });
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function render(){
+  renderWhoAmI();
+  renderPlayers();
+  renderMatches();
+  renderLeaderboard();
+}
+
+loadState();
+
+// Lightweight polling so other devices/players see updates without reloading the page.
+// Skips refreshing while a match card is open so it doesn't interrupt active editing.
+setInterval(async ()=>{
+  if(openMatchId) return;
+  try{
+    const result = await window.storage.get(STORE_KEY, true);
+    if(result && result.value){
+      state = Object.assign({players:[],matches:[],settings:{exactPoints:4}}, JSON.parse(result.value));
+      render();
+    }
+  }catch(e){
+    // ignore — keep showing last known state
+  }
+}, 6000);
+</script>
+</body>
+</html>
