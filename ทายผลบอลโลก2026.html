@@ -182,11 +182,6 @@
 <body>
 <div class="stripes"></div>
 <div class="wrap">
-  <div id="storageWarning" style="display:none; background:rgba(217,83,58,0.18); border:1px solid rgba(217,83,58,0.4); color:#F2A18F; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:13px; line-height:1.6;">
-    ⚠️ <strong>ระบบบันทึกข้อมูลใช้งานไม่ได้ในหน้านี้</strong><br>
-    เครื่องนี้/เบราว์เซอร์นี้ไม่รองรับการบันทึกข้อมูลของแอป (window.storage ไม่พร้อมใช้งาน) — กรอกอะไรไปก็จะไม่ถูกบันทึกและจะหายไปเมื่อปิดหน้านี้<br>
-    ลองเปิดหน้านี้ผ่านแอป/เว็บ Claude โดยตรงอีกครั้ง แล้วรีโหลดดูครับ
-  </div>
   <header>
     <div class="eyebrow">World Cup 2026 · Knockout Pool</div>
     <svg class="hero-art" viewBox="0 0 220 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -224,8 +219,12 @@
     </svg>
     <h1>ทายผล<span>บอลโลก</span></h1>
     <div class="sub">บันทึกผลทาย คำนวณคะแนนอัตโนมัติ แชร์สกอร์บอร์ดให้เพื่อน</div>
-    <div class="sub" style="margin-top:4px; font-size:11.5px; color:var(--gold-soft);">ข้อมูลซิงค์ข้ามทุกเครื่องที่เปิดไฟล์นี้ — ใครเปิดก็เห็นข้อมูลเดียวกัน</div>
+    <div class="sub" style="margin-top:4px; font-size:11.5px; color:var(--gold-soft);">ข้อมูลอยู่ในเครื่อง/แท็บนี้เท่านั้น — กด "ดาวน์โหลดข้อมูลสำรอง" เก็บไว้กันหาย แล้วส่งไฟล์ให้เพื่อนหรือเปิดต่อได้</div>
   </header>
+
+  <div id="syncBanner" style="display:none; background:rgba(216,179,84,0.12); border:1px solid rgba(216,179,84,0.35); color:var(--gold-soft); border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:12.5px; line-height:1.6;">
+    ℹ️ ยังไม่เชื่อมต่อฐานข้อมูล Google Sheet — ตอนนี้ข้อมูลจะอยู่แค่ในเครื่องนี้/แท็บนี้เท่านั้น (ใช้ปุ่ม "ดาวน์โหลด/นำเข้าข้อมูลสำรอง" ด้านล่างแทนได้) เมื่อ deploy Apps Script เสร็จแล้ว ส่ง URL กลับมาให้ฝังในแอปได้เลย
+  </div>
 
   <nav class="tabs">
     <button data-tab="players" class="active">👥 ผู้เล่น</button>
@@ -238,7 +237,17 @@
     <select id="whoamiSelect">
       <option value="">— แอดมิน / ดูทั้งหมด —</option>
     </select>
-    <div class="hint" style="margin-top:8px; margin-bottom:0;">เลือกชื่อตัวเองเพื่อทายผลของคุณคนเดียว เลือก "แอดมิน" เพื่อจัดการผู้เล่น/แมตช์/ผลจริง</div>
+    <div class="hint" style="margin-top:8px; margin-bottom:0;">ใช้ตัวเลือกนี้กรองหน้าจอตอนแอดมินกรอกผลทายแทนแต่ละคน เลือก "แอดมิน" เพื่อจัดการผู้เล่น/แมตช์/ผลจริง</div>
+  </div>
+
+  <div class="card" id="backupCard" style="margin-bottom:18px;">
+    <h2 style="margin-bottom:10px;">💾 สำรอง / กู้ข้อมูล</h2>
+    <div class="hint" style="margin-top:0; margin-bottom:10px;">ข้อมูลทั้งหมดอยู่ในแท็บนี้เท่านั้น ปิดแท็บหรือรีโหลดหน้าแล้วข้อมูลจะหาย — กดดาวน์โหลดไว้ก่อนปิด แล้วค่อยนำเข้าไฟล์นี้กลับมาตอนเปิดใหม่ครั้งหน้า</div>
+    <div class="row">
+      <button class="btn btn-gold" id="exportBtn" style="flex:1;">📥 ดาวน์โหลดข้อมูลสำรอง</button>
+      <button class="btn btn-ghost" id="importBtn" style="flex:1;">📤 นำเข้าข้อมูลสำรอง</button>
+    </div>
+    <input type="file" id="importFileInput" accept="application/json" style="display:none;">
   </div>
 
   <!-- PLAYERS -->
@@ -299,11 +308,7 @@
   <!-- LEADERBOARD -->
   <section class="panel" id="panel-leaderboard">
     <div class="card">
-      <div style="display:flex; align-items:center; justify-content:space-between;">
-        <h2 style="margin-bottom:0;">🏆 สกอร์บอร์ดรวม</h2>
-        <button class="btn btn-ghost" id="lbRefreshBtn" style="padding:5px 12px; font-size:11.5px;">🔄 รีเฟรช</button>
-      </div>
-      <div style="height:14px;"></div>
+      <h2>🏆 สกอร์บอร์ดรวม</h2>
       <div id="lbList"></div>
       <div class="empty" id="lbEmpty" style="display:none;">🏆 ยังไม่มีคะแนน เพิ่มผู้เล่นและบันทึกผลแมตช์ก่อนครับ</div>
     </div>
@@ -312,7 +317,13 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const META_KEY = 'wc-meta';
+// ===== ตั้งค่าการเชื่อมต่อฐานข้อมูล (Google Apps Script Web App) =====
+// วาง URL ที่ได้จากตอน Deploy เป็น Web App ไว้ในนี้ เช่น
+// 'https://script.google.com/macros/s/AKfycb.../exec'
+// ถ้ายังไม่ตั้ง จะใช้งานได้แค่ในเครื่องนี้/แท็บนี้เท่านั้น (ไม่ซิงก์กับใคร)
+const API_URL = 'https://script.google.com/macros/s/AKfycbxHPGOUDbdoeAmtRTIS7nTELHBE0TC86gKcrGYEJebsyG99BcmS9SbL1BTTtVQtDeU13g/exec';
+const API_CONFIGURED = API_URL.indexOf('PASTE_') === -1 && API_URL.startsWith('http');
+
 const DEFAULT_PLAYERS = ['Luis','TEM','GUNNER','MOB','TACK'].map(name=>({ id: 'p_'+name.toLowerCase(), name }));
 const DEFAULT_MATCHES = [
   ['South Africa','Canada','2026-06-28T19:00:00Z'],
@@ -336,18 +347,13 @@ const DEFAULT_MATCHES = [
   round: 'รอบ 32 ทีม', teamA, teamB, kickoff,
   actual: { scoreA:null, scoreB:null }
 }));
+
+// Everything lives in memory only — no server, no window.storage.
+// predictions[matchId][playerId] = {scoreA, scoreB}
 let state = { players: DEFAULT_PLAYERS.slice(), matches: DEFAULT_MATCHES.slice(), settings: { exactPoints: 4 } };
+let predictions = {};
 let openMatchId = null;
 let currentPlayerId = '';
-
-// Each player's prediction for each match is stored under its OWN key
-// (wc-pred-<matchId>-<playerId>) instead of inside one big shared blob.
-// That way two people saving at the same time can never overwrite each
-// other's picks — only the meta (players/matches/settings) is one shared blob.
-let predictionsCache = {}; // predictionsCache[matchId][playerId] = {scoreA, scoreB}
-
-function predKey(matchId, playerId){ return `wc-pred-${matchId}-${playerId}`; }
-
 
 const ROUND_ORDER = ['รอบ 32 ทีม','รอบ 16 ทีม','รอบ 8 ทีม','รอบรองชนะเลิศ','ชิงอันดับ 3','ชิงชนะเลิศ'];
 
@@ -389,74 +395,101 @@ function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 1500);
+  setTimeout(()=>t.classList.remove('show'), 1800);
 }
 
-async function loadMeta(){
+function getPrediction(matchId, playerId){
+  return (predictions[matchId] && predictions[matchId][playerId]) || { scoreA:'', scoreB:'' };
+}
+
+function setPrediction(matchId, playerId, predObj){
+  if(!predictions[matchId]) predictions[matchId] = {};
+  predictions[matchId][playerId] = predObj;
+}
+
+// ---------- Sync with Google Sheet backend (if configured) ----------
+async function loadAll(){
+  if(!API_CONFIGURED) return;
   try{
-    const result = await window.storage.get(META_KEY, true);
-    if(result && result.value){
-      const parsed = JSON.parse(result.value);
-      state = Object.assign({players:[],matches:[],settings:{exactPoints:4}}, parsed);
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    if(data.meta){
+      state = Object.assign({players:[],matches:[],settings:{exactPoints:4}}, data.meta);
     }
+    predictions = data.predictions || {};
+    render();
   }catch(e){
-    // no saved data yet, or storage unavailable — start fresh
+    console.error('โหลดข้อมูลไม่สำเร็จ', e);
   }
-  render();
 }
 
-async function withRetry(fn){
+async function saveMetaRemote(){
+  if(!API_CONFIGURED) return;
   try{
-    return await fn();
-  }catch(e1){
-    await new Promise(r=>setTimeout(r, 700));
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action:'saveMeta', meta:{ players:state.players, matches:state.matches, settings:state.settings } })
+    });
+  }catch(e){
+    showToast('ซิงก์ไม่สำเร็จ: ' + e.message);
+  }
+}
+
+async function savePredictionRemote(matchId, playerId, pred){
+  if(!API_CONFIGURED) return;
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action:'savePrediction', matchId, playerId, scoreA: pred.scoreA, scoreB: pred.scoreB })
+    });
+  }catch(e){
+    showToast('ซิงก์ไม่สำเร็จ: ' + e.message);
+  }
+}
+
+// ---------- Backup: export / import ----------
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const backup = { state, predictions, savedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+  a.href = url;
+  a.download = `ทายผลบอลโลก-สำรอง-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('ดาวน์โหลดไฟล์สำรองแล้ว');
+});
+
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  document.getElementById('importFileInput').click();
+});
+
+document.getElementById('importFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
     try{
-      return await fn();
-    }catch(e2){
-      throw e2;
+      const backup = JSON.parse(evt.target.result);
+      if(!backup.state || !backup.state.players || !backup.state.matches){
+        showToast('ไฟล์นี้ไม่ใช่ไฟล์สำรองที่ถูกต้อง');
+        return;
+      }
+      state = Object.assign({players:[],matches:[],settings:{exactPoints:4}}, backup.state);
+      predictions = backup.predictions || {};
+      openMatchId = null;
+      render();
+      showToast('นำเข้าข้อมูลสำรองแล้ว');
+    }catch(err){
+      showToast('อ่านไฟล์ไม่สำเร็จ: ' + err.message);
     }
-  }
-}
-
-async function saveMeta(){
-  try{
-    await withRetry(()=>window.storage.set(META_KEY, JSON.stringify(state), true));
-  }catch(e){
-    console.error('บันทึกข้อมูลไม่สำเร็จ', e);
-    showToast('บันทึกไม่สำเร็จ: ' + (e && e.message ? e.message : 'ไม่ทราบสาเหตุ'));
-  }
-}
-
-// Fetch one player's prediction for one match fresh from storage (overwrites cache).
-async function fetchPrediction(matchId, playerId){
-  if(!predictionsCache[matchId]) predictionsCache[matchId] = {};
-  try{
-    const res = await window.storage.get(predKey(matchId, playerId), true);
-    predictionsCache[matchId][playerId] = (res && res.value) ? JSON.parse(res.value) : { scoreA:'', scoreB:'' };
-  }catch(e){
-    if(!predictionsCache[matchId][playerId]) predictionsCache[matchId][playerId] = { scoreA:'', scoreB:'' };
-  }
-  return predictionsCache[matchId][playerId];
-}
-
-async function fetchPredictionsFor(matchId, playerIds){
-  await Promise.all(playerIds.map(pid=>fetchPrediction(matchId, pid)));
-}
-
-async function savePrediction(matchId, playerId, predObj){
-  if(!predictionsCache[matchId]) predictionsCache[matchId] = {};
-  predictionsCache[matchId][playerId] = predObj; // optimistic local update
-  try{
-    await withRetry(()=>window.storage.set(predKey(matchId, playerId), JSON.stringify(predObj), true));
-  }catch(e){
-    console.error('บันทึกผลทายไม่สำเร็จ', e);
-    showToast('บันทึกผลทายไม่สำเร็จ: ' + (e && e.message ? e.message : 'ไม่ทราบสาเหตุ'));
-  }
-}
-
-function getCachedPrediction(matchId, playerId){
-  return (predictionsCache[matchId] && predictionsCache[matchId][playerId]) || { scoreA:'', scoreB:'' };
-}
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
 
 // ---------- Tabs ----------
 document.querySelectorAll('nav.tabs button').forEach(btn=>{
@@ -468,8 +501,6 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
     if(btn.dataset.tab === 'leaderboard') renderLeaderboard();
   });
 });
-
-document.getElementById('lbRefreshBtn').addEventListener('click', renderLeaderboard);
 
 // ---------- Who am I ----------
 document.getElementById('whoamiSelect').addEventListener('change', e=>{
@@ -502,23 +533,19 @@ function addPlayer(){
   if(state.players.some(p=>p.name === name)){ showToast('มีชื่อนี้อยู่แล้ว'); return; }
   state.players.push({ id: uid(), name });
   input.value = '';
-  saveMeta();
   renderPlayers();
   renderWhoAmI();
   renderMatches();
+  saveMetaRemote();
 }
 
 function removePlayer(id){
   state.players = state.players.filter(p=>p.id!==id);
-  // best-effort cleanup of that player's saved predictions (not critical if it fails)
-  state.matches.forEach(m=>{
-    if(predictionsCache[m.id]) delete predictionsCache[m.id][id];
-    window.storage.delete(predKey(m.id, id), true).catch(()=>{});
-  });
-  saveMeta();
+  Object.keys(predictions).forEach(matchId=>{ delete predictions[matchId][id]; });
   renderPlayers();
   renderWhoAmI();
   renderMatches();
+  saveMetaRemote();
 }
 
 function renderPlayers(){
@@ -538,8 +565,8 @@ function renderPlayers(){
 // ---------- Matches ----------
 document.getElementById('exactPointsSelect').addEventListener('change', e=>{
   state.settings.exactPoints = parseInt(e.target.value, 10);
-  saveMeta();
   renderMatches();
+  saveMetaRemote();
 });
 
 document.getElementById('addMatchBtn').addEventListener('click', ()=>{
@@ -558,17 +585,16 @@ document.getElementById('addMatchBtn').addEventListener('click', ()=>{
   document.getElementById('newTeamB').value = '';
   document.getElementById('newKickoff').value = '';
   openMatchId = match.id;
-  saveMeta();
   renderMatches();
   showToast('เพิ่มแมตช์แล้ว');
+  saveMetaRemote();
 });
 
 function removeMatch(id){
   state.matches = state.matches.filter(m=>m.id!==id);
-  state.players.forEach(p=>{ window.storage.delete(predKey(id, p.id), true).catch(()=>{}); });
-  delete predictionsCache[id];
-  saveMeta();
+  delete predictions[id];
   renderMatches();
+  saveMetaRemote();
 }
 
 function getOutcome(a,b){
@@ -644,29 +670,15 @@ function renderMatches(){
       </div>
       <div class="match-body ${isOpen?'open':''}" id="body-${m.id}"></div>
     `;
-    card.querySelector('.match-head').addEventListener('click', async ()=>{
-      if(openMatchId === m.id){
-        openMatchId = null;
-        renderMatches();
-        return;
-      }
-      openMatchId = m.id;
-      renderMatches(); // show the card expanded with a loading state first
-      const viewingSelfNow = currentPlayerId && state.players.some(p=>p.id===currentPlayerId);
-      const idsToLoad = viewingSelfNow ? [currentPlayerId] : state.players.map(p=>p.id);
-      await fetchPredictionsFor(m.id, idsToLoad);
-      refreshOpenMatchBody();
+    card.querySelector('.match-head').addEventListener('click', ()=>{
+      openMatchId = (openMatchId === m.id) ? null : m.id;
+      renderMatches();
     });
     list.appendChild(card);
 
     if(isOpen){
       const body = card.querySelector(`#body-${m.id}`);
-      const hasCache = predictionsCache[m.id];
-      if(hasCache){
-        body.appendChild(buildMatchBody(m, actualKnown, actualOutcome));
-      } else {
-        body.innerHTML = '<div class="empty">⏳ กำลังโหลดผลทาย…</div>';
-      }
+      body.appendChild(buildMatchBody(m, actualKnown, actualOutcome));
     }
   });
 }
@@ -706,35 +718,17 @@ function buildMatchBody(m, actualKnown, actualOutcome){
     `;
     wrap.appendChild(grid);
 
-    grid.querySelector(`#actA-${m.id}`).addEventListener('input', e=>{ m.actual.scoreA = e.target.value===''?'':parseInt(e.target.value,10); saveMeta(); refreshOpenMatchBody(); });
-    grid.querySelector(`#actB-${m.id}`).addEventListener('input', e=>{ m.actual.scoreB = e.target.value===''?'':parseInt(e.target.value,10); saveMeta(); refreshOpenMatchBody(); });
+    grid.querySelector(`#actA-${m.id}`).addEventListener('input', e=>{ m.actual.scoreA = e.target.value===''?'':parseInt(e.target.value,10); refreshOpenMatchBody(); saveMetaRemote(); });
+    grid.querySelector(`#actB-${m.id}`).addEventListener('input', e=>{ m.actual.scoreB = e.target.value===''?'':parseInt(e.target.value,10); refreshOpenMatchBody(); saveMetaRemote(); });
   }
   const playersToShow = viewingSelf ? state.players.filter(p=>p.id===currentPlayerId) : state.players;
 
-  const predTitleRow = document.createElement('div');
-  predTitleRow.style.display = 'flex';
-  predTitleRow.style.alignItems = 'center';
-  predTitleRow.style.justifyContent = 'space-between';
   const predTitle = document.createElement('div');
   predTitle.className = 'sub-section-title';
-  predTitle.style.margin = '14px 0 8px';
   predTitle.textContent = viewingSelf
     ? `ผลทายของคุณ`
     : `ผลทายของผู้เล่น (${state.players.length} คน)`;
-  const refreshBtn = document.createElement('button');
-  refreshBtn.className = 'btn btn-ghost';
-  refreshBtn.style.padding = '4px 10px';
-  refreshBtn.style.fontSize = '11.5px';
-  refreshBtn.textContent = '🔄 ดึงล่าสุด';
-  refreshBtn.addEventListener('click', async ()=>{
-    const ids = viewingSelf ? [currentPlayerId] : state.players.map(p=>p.id);
-    await fetchPredictionsFor(m.id, ids);
-    refreshOpenMatchBody();
-    showToast('อัปเดตผลทายล่าสุดแล้ว');
-  });
-  predTitleRow.appendChild(predTitle);
-  predTitleRow.appendChild(refreshBtn);
-  wrap.appendChild(predTitleRow);
+  wrap.appendChild(predTitle);
 
   if(state.players.length === 0){
     const e = document.createElement('div');
@@ -745,7 +739,7 @@ function buildMatchBody(m, actualKnown, actualOutcome){
   }
 
   playersToShow.forEach(p=>{
-    const pred = getCachedPrediction(m.id, p.id);
+    const pred = getPrediction(m.id, p.id);
     const hasPrediction = pred.scoreA!=='' && pred.scoreA!=null && pred.scoreB!=='' && pred.scoreB!=null;
 
     const row = document.createElement('div');
@@ -759,14 +753,16 @@ function buildMatchBody(m, actualKnown, actualOutcome){
     wrap.appendChild(row);
 
     row.querySelector(`#predA-${m.id}-${p.id}`).addEventListener('input', e=>{
-      pred.scoreA = e.target.value===''?'':parseInt(e.target.value,10);
-      savePrediction(m.id, p.id, pred);
+      const next = { ...pred, scoreA: e.target.value===''?'':parseInt(e.target.value,10) };
+      setPrediction(m.id, p.id, next);
       refreshOpenMatchBody();
+      savePredictionRemote(m.id, p.id, next);
     });
     row.querySelector(`#predB-${m.id}-${p.id}`).addEventListener('input', e=>{
-      pred.scoreB = e.target.value===''?'':parseInt(e.target.value,10);
-      savePrediction(m.id, p.id, pred);
+      const next = { ...pred, scoreB: e.target.value===''?'':parseInt(e.target.value,10) };
+      setPrediction(m.id, p.id, next);
       refreshOpenMatchBody();
+      savePredictionRemote(m.id, p.id, next);
     });
 
     if(actualKnown){
@@ -826,40 +822,30 @@ function refreshOpenMatchBody(){
 }
 
 // ---------- Leaderboard ----------
-async function renderLeaderboard(){
+function renderLeaderboard(){
   const list = document.getElementById('lbList');
   const empty = document.getElementById('lbEmpty');
+  list.innerHTML = '';
 
   if(state.players.length === 0){
-    list.innerHTML = '';
     empty.style.display = 'block';
     empty.textContent = '🏆 ยังไม่มีคะแนน เพิ่มผู้เล่นและบันทึกผลแมตช์ก่อนครับ';
     return;
   }
-
-  empty.style.display = 'none';
-  list.innerHTML = '<div class="empty">⏳ กำลังรวมคะแนนจากทุกเครื่อง…</div>';
-
-  // pull every player's prediction for every scored match fresh from storage
-  await Promise.all(
-    state.matches
-      .filter(m => m.actual.scoreA!==null && m.actual.scoreA!=='' && m.actual.scoreB!==null && m.actual.scoreB!=='')
-      .map(m => fetchPredictionsFor(m.id, state.players.map(p=>p.id)))
-  );
 
   const totals = state.players.map(p=>{
     let total = 0;
     state.matches.forEach(m=>{
       const actualKnown = m.actual.scoreA!==null && m.actual.scoreA!=='' && m.actual.scoreB!==null && m.actual.scoreB!=='';
       if(!actualKnown) return;
-      const pred = getCachedPrediction(m.id, p.id);
+      const pred = getPrediction(m.id, p.id);
       if(!pred || pred.scoreA==='' || pred.scoreA==null || pred.scoreB==='' || pred.scoreB==null) return;
       total += calcPoints(pred, m.actual, state.settings.exactPoints).points;
     });
     return { id: p.id, name: p.name, total };
   }).sort((a,b)=>b.total - a.total);
 
-  list.innerHTML = '';
+  empty.style.display = 'none';
   totals.forEach((t,i)=>{
     const div = document.createElement('div');
     div.className = 'lb-row ' + (i===0?'r1':i===1?'r2':i===2?'r3':'');
@@ -878,33 +864,20 @@ function render(){
   renderPlayers();
   renderMatches();
   renderLeaderboard();
+  document.getElementById('syncBanner').style.display = API_CONFIGURED ? 'none' : 'block';
 }
 
-if(!window.storage || typeof window.storage.set !== 'function'){
-  document.getElementById('storageWarning').style.display = 'block';
+render();
+loadAll();
+
+// Poll the Sheet every few seconds so everyone sees new picks/results.
+// Skipped while a match card is open so it doesn't disrupt active typing —
+// closing/reopening the card (or the next poll tick) picks up fresh data.
+if(API_CONFIGURED){
+  setInterval(()=>{
+    if(!openMatchId) loadAll();
+  }, 5000);
 }
-
-loadMeta();
-
-// Lightweight polling so other devices/players see new matches, results, and
-// player-list changes without reloading the page. This only ever touches the
-// small shared "meta" blob (players/matches/settings) — predictions live in
-// their own keys and are pulled separately (on open, or via "🔄 ดึงล่าสุด"),
-// so two people picking scores at the same time can never wipe each other out.
-setInterval(async ()=>{
-  try{
-    const result = await window.storage.get(META_KEY, true);
-    if(result && result.value){
-      state = Object.assign({players:[],matches:[],settings:{exactPoints:4}}, JSON.parse(result.value));
-      renderWhoAmI();
-      renderPlayers();
-      renderMatches();
-      if(document.getElementById('panel-leaderboard').classList.contains('active')) renderLeaderboard();
-    }
-  }catch(e){
-    // ignore — keep showing last known state
-  }
-}, 6000);
 </script>
 </body>
 </html>
