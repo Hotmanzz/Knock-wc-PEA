@@ -182,6 +182,11 @@
 <body>
 <div class="stripes"></div>
 <div class="wrap">
+  <div id="storageWarning" style="display:none; background:rgba(217,83,58,0.18); border:1px solid rgba(217,83,58,0.4); color:#F2A18F; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:13px; line-height:1.6;">
+    ⚠️ <strong>ระบบบันทึกข้อมูลใช้งานไม่ได้ในหน้านี้</strong><br>
+    เครื่องนี้/เบราว์เซอร์นี้ไม่รองรับการบันทึกข้อมูลของแอป (window.storage ไม่พร้อมใช้งาน) — กรอกอะไรไปก็จะไม่ถูกบันทึกและจะหายไปเมื่อปิดหน้านี้<br>
+    ลองเปิดหน้านี้ผ่านแอป/เว็บ Claude โดยตรงอีกครั้ง แล้วรีโหลดดูครับ
+  </div>
   <header>
     <div class="eyebrow">World Cup 2026 · Knockout Pool</div>
     <svg class="hero-art" viewBox="0 0 220 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -400,12 +405,25 @@ async function loadMeta(){
   render();
 }
 
+async function withRetry(fn){
+  try{
+    return await fn();
+  }catch(e1){
+    await new Promise(r=>setTimeout(r, 700));
+    try{
+      return await fn();
+    }catch(e2){
+      throw e2;
+    }
+  }
+}
+
 async function saveMeta(){
   try{
-    await window.storage.set(META_KEY, JSON.stringify(state), true);
+    await withRetry(()=>window.storage.set(META_KEY, JSON.stringify(state), true));
   }catch(e){
     console.error('บันทึกข้อมูลไม่สำเร็จ', e);
-    showToast('บันทึกไม่สำเร็จ ลองอีกครั้ง');
+    showToast('บันทึกไม่สำเร็จ: ' + (e && e.message ? e.message : 'ไม่ทราบสาเหตุ'));
   }
 }
 
@@ -429,10 +447,10 @@ async function savePrediction(matchId, playerId, predObj){
   if(!predictionsCache[matchId]) predictionsCache[matchId] = {};
   predictionsCache[matchId][playerId] = predObj; // optimistic local update
   try{
-    await window.storage.set(predKey(matchId, playerId), JSON.stringify(predObj), true);
+    await withRetry(()=>window.storage.set(predKey(matchId, playerId), JSON.stringify(predObj), true));
   }catch(e){
     console.error('บันทึกผลทายไม่สำเร็จ', e);
-    showToast('บันทึกผลทายไม่สำเร็จ ลองอีกครั้ง');
+    showToast('บันทึกผลทายไม่สำเร็จ: ' + (e && e.message ? e.message : 'ไม่ทราบสาเหตุ'));
   }
 }
 
@@ -860,6 +878,10 @@ function render(){
   renderPlayers();
   renderMatches();
   renderLeaderboard();
+}
+
+if(!window.storage || typeof window.storage.set !== 'function'){
+  document.getElementById('storageWarning').style.display = 'block';
 }
 
 loadMeta();
