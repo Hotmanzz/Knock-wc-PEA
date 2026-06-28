@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -294,7 +294,11 @@
   <!-- LEADERBOARD -->
   <section class="panel" id="panel-leaderboard">
     <div class="card">
-      <h2>🏆 สกอร์บอร์ดรวม</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <h2 style="margin-bottom:0;">🏆 สกอร์บอร์ดรวม</h2>
+        <button class="btn btn-ghost" id="lbRefreshBtn" style="padding:5px 12px; font-size:11.5px;">🔄 รีเฟรช</button>
+      </div>
+      <div style="height:14px;"></div>
       <div id="lbList"></div>
       <div class="empty" id="lbEmpty" style="display:none;">🏆 ยังไม่มีคะแนน เพิ่มผู้เล่นและบันทึกผลแมตช์ก่อนครับ</div>
     </div>
@@ -303,7 +307,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const STORE_KEY = 'wc-knockout-pool-data';
+const META_KEY = 'wc-meta';
 const DEFAULT_PLAYERS = ['Luis','TEM','GUNNER','MOB','TACK'].map(name=>({ id: 'p_'+name.toLowerCase(), name }));
 const DEFAULT_MATCHES = [
   ['South Africa','Canada','2026-06-28T19:00:00Z'],
@@ -325,11 +329,20 @@ const DEFAULT_MATCHES = [
 ].map(([teamA,teamB,kickoff])=>({
   id: 'm_'+teamA.toLowerCase().replace(/[^a-z]/g,'')+'_'+teamB.toLowerCase().replace(/[^a-z]/g,''),
   round: 'รอบ 32 ทีม', teamA, teamB, kickoff,
-  predictions: {}, actual: { scoreA:null, scoreB:null }
+  actual: { scoreA:null, scoreB:null }
 }));
 let state = { players: DEFAULT_PLAYERS.slice(), matches: DEFAULT_MATCHES.slice(), settings: { exactPoints: 4 } };
 let openMatchId = null;
 let currentPlayerId = '';
+
+// Each player's prediction for each match is stored under its OWN key
+// (wc-pred-<matchId>-<playerId>) instead of inside one big shared blob.
+// That way two people saving at the same time can never overwrite each
+// other's picks — only the meta (players/matches/settings) is one shared blob.
+let predictionsCache = {}; // predictionsCache[matchId][playerId] = {scoreA, scoreB}
+
+function predKey(matchId, playerId){ return `wc-pred-${matchId}-${playerId}`; }
+
 
 const ROUND_ORDER = ['รอบ 32 ทีม','รอบ 16 ทีม','รอบ 8 ทีม','รอบรองชนะเลิศ','ชิงอันดับ 3','ชิงชนะเลิศ'];
 
@@ -374,9 +387,9 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'), 1500);
 }
 
-async function loadState(){
+async function loadMeta(){
   try{
-    const result = await window.storage.get(STORE_KEY, true);
+    const result = await window.storage.get(META_KEY, true);
     if(result && result.value){
       const parsed = JSON.parse(result.value);
       state = Object.assign({players:[],matches:[],settings:{exactPoints:4}}, parsed);
@@ -387,13 +400,44 @@ async function loadState(){
   render();
 }
 
-async function saveState(){
+async function saveMeta(){
   try{
-    await window.storage.set(STORE_KEY, JSON.stringify(state), true);
+    await window.storage.set(META_KEY, JSON.stringify(state), true);
   }catch(e){
     console.error('บันทึกข้อมูลไม่สำเร็จ', e);
     showToast('บันทึกไม่สำเร็จ ลองอีกครั้ง');
   }
+}
+
+// Fetch one player's prediction for one match fresh from storage (overwrites cache).
+async function fetchPrediction(matchId, playerId){
+  if(!predictionsCache[matchId]) predictionsCache[matchId] = {};
+  try{
+    const res = await window.storage.get(predKey(matchId, playerId), true);
+    predictionsCache[matchId][playerId] = (res && res.value) ? JSON.parse(res.value) : { scoreA:'', scoreB:'' };
+  }catch(e){
+    if(!predictionsCache[matchId][playerId]) predictionsCache[matchId][playerId] = { scoreA:'', scoreB:'' };
+  }
+  return predictionsCache[matchId][playerId];
+}
+
+async function fetchPredictionsFor(matchId, playerIds){
+  await Promise.all(playerIds.map(pid=>fetchPrediction(matchId, pid)));
+}
+
+async function savePrediction(matchId, playerId, predObj){
+  if(!predictionsCache[matchId]) predictionsCache[matchId] = {};
+  predictionsCache[matchId][playerId] = predObj; // optimistic local update
+  try{
+    await window.storage.set(predKey(matchId, playerId), JSON.stringify(predObj), true);
+  }catch(e){
+    console.error('บันทึกผลทายไม่สำเร็จ', e);
+    showToast('บันทึกผลทายไม่สำเร็จ ลองอีกครั้ง');
+  }
+}
+
+function getCachedPrediction(matchId, playerId){
+  return (predictionsCache[matchId] && predictionsCache[matchId][playerId]) || { scoreA:'', scoreB:'' };
 }
 
 // ---------- Tabs ----------
@@ -406,6 +450,8 @@ document.querySelectorAll('nav.tabs button').forEach(btn=>{
     if(btn.dataset.tab === 'leaderboard') renderLeaderboard();
   });
 });
+
+document.getElementById('lbRefreshBtn').addEventListener('click', renderLeaderboard);
 
 // ---------- Who am I ----------
 document.getElementById('whoamiSelect').addEventListener('change', e=>{
@@ -438,7 +484,7 @@ function addPlayer(){
   if(state.players.some(p=>p.name === name)){ showToast('มีชื่อนี้อยู่แล้ว'); return; }
   state.players.push({ id: uid(), name });
   input.value = '';
-  saveState();
+  saveMeta();
   renderPlayers();
   renderWhoAmI();
   renderMatches();
@@ -446,8 +492,12 @@ function addPlayer(){
 
 function removePlayer(id){
   state.players = state.players.filter(p=>p.id!==id);
-  state.matches.forEach(m=>{ delete m.predictions[id]; });
-  saveState();
+  // best-effort cleanup of that player's saved predictions (not critical if it fails)
+  state.matches.forEach(m=>{
+    if(predictionsCache[m.id]) delete predictionsCache[m.id][id];
+    window.storage.delete(predKey(m.id, id), true).catch(()=>{});
+  });
+  saveMeta();
   renderPlayers();
   renderWhoAmI();
   renderMatches();
@@ -470,7 +520,7 @@ function renderPlayers(){
 // ---------- Matches ----------
 document.getElementById('exactPointsSelect').addEventListener('change', e=>{
   state.settings.exactPoints = parseInt(e.target.value, 10);
-  saveState();
+  saveMeta();
   renderMatches();
 });
 
@@ -483,7 +533,6 @@ document.getElementById('addMatchBtn').addEventListener('click', ()=>{
   const match = {
     id: uid(), round, teamA, teamB,
     kickoff: kickoffRaw ? new Date(kickoffRaw).toISOString() : null,
-    predictions: {}, // playerId -> {scoreA, scoreB}
     actual: { scoreA:null, scoreB:null }
   };
   state.matches.push(match);
@@ -491,14 +540,16 @@ document.getElementById('addMatchBtn').addEventListener('click', ()=>{
   document.getElementById('newTeamB').value = '';
   document.getElementById('newKickoff').value = '';
   openMatchId = match.id;
-  saveState();
+  saveMeta();
   renderMatches();
   showToast('เพิ่มแมตช์แล้ว');
 });
 
 function removeMatch(id){
   state.matches = state.matches.filter(m=>m.id!==id);
-  saveState();
+  state.players.forEach(p=>{ window.storage.delete(predKey(id, p.id), true).catch(()=>{}); });
+  delete predictionsCache[id];
+  saveMeta();
   renderMatches();
 }
 
@@ -575,15 +626,29 @@ function renderMatches(){
       </div>
       <div class="match-body ${isOpen?'open':''}" id="body-${m.id}"></div>
     `;
-    card.querySelector('.match-head').addEventListener('click', ()=>{
-      openMatchId = (openMatchId === m.id) ? null : m.id;
-      renderMatches();
+    card.querySelector('.match-head').addEventListener('click', async ()=>{
+      if(openMatchId === m.id){
+        openMatchId = null;
+        renderMatches();
+        return;
+      }
+      openMatchId = m.id;
+      renderMatches(); // show the card expanded with a loading state first
+      const viewingSelfNow = currentPlayerId && state.players.some(p=>p.id===currentPlayerId);
+      const idsToLoad = viewingSelfNow ? [currentPlayerId] : state.players.map(p=>p.id);
+      await fetchPredictionsFor(m.id, idsToLoad);
+      refreshOpenMatchBody();
     });
     list.appendChild(card);
 
     if(isOpen){
       const body = card.querySelector(`#body-${m.id}`);
-      body.appendChild(buildMatchBody(m, actualKnown, actualOutcome));
+      const hasCache = predictionsCache[m.id];
+      if(hasCache){
+        body.appendChild(buildMatchBody(m, actualKnown, actualOutcome));
+      } else {
+        body.innerHTML = '<div class="empty">⏳ กำลังโหลดผลทาย…</div>';
+      }
     }
   });
 }
@@ -623,17 +688,35 @@ function buildMatchBody(m, actualKnown, actualOutcome){
     `;
     wrap.appendChild(grid);
 
-    grid.querySelector(`#actA-${m.id}`).addEventListener('input', e=>{ m.actual.scoreA = e.target.value===''?'':parseInt(e.target.value,10); saveState(); refreshOpenMatchBody(); });
-    grid.querySelector(`#actB-${m.id}`).addEventListener('input', e=>{ m.actual.scoreB = e.target.value===''?'':parseInt(e.target.value,10); saveState(); refreshOpenMatchBody(); });
+    grid.querySelector(`#actA-${m.id}`).addEventListener('input', e=>{ m.actual.scoreA = e.target.value===''?'':parseInt(e.target.value,10); saveMeta(); refreshOpenMatchBody(); });
+    grid.querySelector(`#actB-${m.id}`).addEventListener('input', e=>{ m.actual.scoreB = e.target.value===''?'':parseInt(e.target.value,10); saveMeta(); refreshOpenMatchBody(); });
   }
   const playersToShow = viewingSelf ? state.players.filter(p=>p.id===currentPlayerId) : state.players;
 
+  const predTitleRow = document.createElement('div');
+  predTitleRow.style.display = 'flex';
+  predTitleRow.style.alignItems = 'center';
+  predTitleRow.style.justifyContent = 'space-between';
   const predTitle = document.createElement('div');
   predTitle.className = 'sub-section-title';
+  predTitle.style.margin = '14px 0 8px';
   predTitle.textContent = viewingSelf
     ? `ผลทายของคุณ`
     : `ผลทายของผู้เล่น (${state.players.length} คน)`;
-  wrap.appendChild(predTitle);
+  const refreshBtn = document.createElement('button');
+  refreshBtn.className = 'btn btn-ghost';
+  refreshBtn.style.padding = '4px 10px';
+  refreshBtn.style.fontSize = '11.5px';
+  refreshBtn.textContent = '🔄 ดึงล่าสุด';
+  refreshBtn.addEventListener('click', async ()=>{
+    const ids = viewingSelf ? [currentPlayerId] : state.players.map(p=>p.id);
+    await fetchPredictionsFor(m.id, ids);
+    refreshOpenMatchBody();
+    showToast('อัปเดตผลทายล่าสุดแล้ว');
+  });
+  predTitleRow.appendChild(predTitle);
+  predTitleRow.appendChild(refreshBtn);
+  wrap.appendChild(predTitleRow);
 
   if(state.players.length === 0){
     const e = document.createElement('div');
@@ -644,8 +727,7 @@ function buildMatchBody(m, actualKnown, actualOutcome){
   }
 
   playersToShow.forEach(p=>{
-    const pred = m.predictions[p.id] || { scoreA:'', scoreB:'' };
-    m.predictions[p.id] = pred;
+    const pred = getCachedPrediction(m.id, p.id);
     const hasPrediction = pred.scoreA!=='' && pred.scoreA!=null && pred.scoreB!=='' && pred.scoreB!=null;
 
     const row = document.createElement('div');
@@ -659,10 +741,14 @@ function buildMatchBody(m, actualKnown, actualOutcome){
     wrap.appendChild(row);
 
     row.querySelector(`#predA-${m.id}-${p.id}`).addEventListener('input', e=>{
-      pred.scoreA = e.target.value===''?'':parseInt(e.target.value,10); saveState(); refreshOpenMatchBody();
+      pred.scoreA = e.target.value===''?'':parseInt(e.target.value,10);
+      savePrediction(m.id, p.id, pred);
+      refreshOpenMatchBody();
     });
     row.querySelector(`#predB-${m.id}-${p.id}`).addEventListener('input', e=>{
-      pred.scoreB = e.target.value===''?'':parseInt(e.target.value,10); saveState(); refreshOpenMatchBody();
+      pred.scoreB = e.target.value===''?'':parseInt(e.target.value,10);
+      savePrediction(m.id, p.id, pred);
+      refreshOpenMatchBody();
     });
 
     if(actualKnown){
@@ -722,30 +808,40 @@ function refreshOpenMatchBody(){
 }
 
 // ---------- Leaderboard ----------
-function renderLeaderboard(){
+async function renderLeaderboard(){
   const list = document.getElementById('lbList');
   const empty = document.getElementById('lbEmpty');
-  list.innerHTML = '';
 
   if(state.players.length === 0){
+    list.innerHTML = '';
     empty.style.display = 'block';
-    empty.textContent = 'ยังไม่มีผู้เล่น เพิ่มผู้เล่นที่แท็บ "ผู้เล่น" ก่อนครับ';
+    empty.textContent = '🏆 ยังไม่มีคะแนน เพิ่มผู้เล่นและบันทึกผลแมตช์ก่อนครับ';
     return;
   }
+
+  empty.style.display = 'none';
+  list.innerHTML = '<div class="empty">⏳ กำลังรวมคะแนนจากทุกเครื่อง…</div>';
+
+  // pull every player's prediction for every scored match fresh from storage
+  await Promise.all(
+    state.matches
+      .filter(m => m.actual.scoreA!==null && m.actual.scoreA!=='' && m.actual.scoreB!==null && m.actual.scoreB!=='')
+      .map(m => fetchPredictionsFor(m.id, state.players.map(p=>p.id)))
+  );
 
   const totals = state.players.map(p=>{
     let total = 0;
     state.matches.forEach(m=>{
       const actualKnown = m.actual.scoreA!==null && m.actual.scoreA!=='' && m.actual.scoreB!==null && m.actual.scoreB!=='';
       if(!actualKnown) return;
-      const pred = m.predictions[p.id];
+      const pred = getCachedPrediction(m.id, p.id);
       if(!pred || pred.scoreA==='' || pred.scoreA==null || pred.scoreB==='' || pred.scoreB==null) return;
       total += calcPoints(pred, m.actual, state.settings.exactPoints).points;
     });
     return { id: p.id, name: p.name, total };
   }).sort((a,b)=>b.total - a.total);
 
-  empty.style.display = 'none';
+  list.innerHTML = '';
   totals.forEach((t,i)=>{
     const div = document.createElement('div');
     div.className = 'lb-row ' + (i===0?'r1':i===1?'r2':i===2?'r3':'');
@@ -766,17 +862,22 @@ function render(){
   renderLeaderboard();
 }
 
-loadState();
+loadMeta();
 
-// Lightweight polling so other devices/players see updates without reloading the page.
-// Skips refreshing while a match card is open so it doesn't interrupt active editing.
+// Lightweight polling so other devices/players see new matches, results, and
+// player-list changes without reloading the page. This only ever touches the
+// small shared "meta" blob (players/matches/settings) — predictions live in
+// their own keys and are pulled separately (on open, or via "🔄 ดึงล่าสุด"),
+// so two people picking scores at the same time can never wipe each other out.
 setInterval(async ()=>{
-  if(openMatchId) return;
   try{
-    const result = await window.storage.get(STORE_KEY, true);
+    const result = await window.storage.get(META_KEY, true);
     if(result && result.value){
       state = Object.assign({players:[],matches:[],settings:{exactPoints:4}}, JSON.parse(result.value));
-      render();
+      renderWhoAmI();
+      renderPlayers();
+      renderMatches();
+      if(document.getElementById('panel-leaderboard').classList.contains('active')) renderLeaderboard();
     }
   }catch(e){
     // ignore — keep showing last known state
