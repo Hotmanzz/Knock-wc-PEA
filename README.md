@@ -219,7 +219,7 @@
     </svg>
     <h1>ทายผล<span>บอลโลก</span></h1>
     <div class="sub">บันทึกผลทาย คำนวณคะแนนอัตโนมัติ แชร์สกอร์บอร์ดให้เพื่อน</div>
-    <div class="sub" style="margin-top:4px; font-size:11.5px; color:var(--gold-soft);">ข้อมูลอยู่ในเครื่อง/แท็บนี้เท่านั้น — กด "ดาวน์โหลดข้อมูลสำรอง" เก็บไว้กันหาย แล้วส่งไฟล์ให้เพื่อนหรือเปิดต่อได้</div>
+    <div class="sub" style="margin-top:4px; font-size:11.5px; color:var(--gold-soft);">ข้อมูลซิงค์กับ Google Sheet — เปิดเครื่องไหนก็เห็นข้อมูลเดียวกัน</div>
   </header>
 
   <div id="syncBanner" style="display:none; background:rgba(216,179,84,0.12); border:1px solid rgba(216,179,84,0.35); color:var(--gold-soft); border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:12.5px; line-height:1.6;">
@@ -238,16 +238,6 @@
       <option value="">— แอดมิน / ดูทั้งหมด —</option>
     </select>
     <div class="hint" style="margin-top:8px; margin-bottom:0;">ใช้ตัวเลือกนี้กรองหน้าจอตอนแอดมินกรอกผลทายแทนแต่ละคน เลือก "แอดมิน" เพื่อจัดการผู้เล่น/แมตช์/ผลจริง</div>
-  </div>
-
-  <div class="card" id="backupCard" style="margin-bottom:18px;">
-    <h2 style="margin-bottom:10px;">💾 สำรอง / กู้ข้อมูล</h2>
-    <div class="hint" style="margin-top:0; margin-bottom:10px;">ข้อมูลทั้งหมดอยู่ในแท็บนี้เท่านั้น ปิดแท็บหรือรีโหลดหน้าแล้วข้อมูลจะหาย — กดดาวน์โหลดไว้ก่อนปิด แล้วค่อยนำเข้าไฟล์นี้กลับมาตอนเปิดใหม่ครั้งหน้า</div>
-    <div class="row">
-      <button class="btn btn-gold" id="exportBtn" style="flex:1;">📥 ดาวน์โหลดข้อมูลสำรอง</button>
-      <button class="btn btn-ghost" id="importBtn" style="flex:1;">📤 นำเข้าข้อมูลสำรอง</button>
-    </div>
-    <input type="file" id="importFileInput" accept="application/json" style="display:none;">
   </div>
 
   <!-- PLAYERS -->
@@ -446,50 +436,6 @@ async function savePredictionRemote(matchId, playerId, pred){
     showToast('ซิงก์ไม่สำเร็จ: ' + e.message);
   }
 }
-
-// ---------- Backup: export / import ----------
-document.getElementById('exportBtn').addEventListener('click', ()=>{
-  const backup = { state, predictions, savedAt: new Date().toISOString() };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const stamp = new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
-  a.href = url;
-  a.download = `ทายผลบอลโลก-สำรอง-${stamp}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-  showToast('ดาวน์โหลดไฟล์สำรองแล้ว');
-});
-
-document.getElementById('importBtn').addEventListener('click', ()=>{
-  document.getElementById('importFileInput').click();
-});
-
-document.getElementById('importFileInput').addEventListener('change', (e)=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = (evt)=>{
-    try{
-      const backup = JSON.parse(evt.target.result);
-      if(!backup.state || !backup.state.players || !backup.state.matches){
-        showToast('ไฟล์นี้ไม่ใช่ไฟล์สำรองที่ถูกต้อง');
-        return;
-      }
-      state = Object.assign({players:[],matches:[],settings:{exactPoints:4}}, backup.state);
-      predictions = backup.predictions || {};
-      openMatchId = null;
-      render();
-      showToast('นำเข้าข้อมูลสำรองแล้ว');
-    }catch(err){
-      showToast('อ่านไฟล์ไม่สำเร็จ: ' + err.message);
-    }
-  };
-  reader.readAsText(file);
-  e.target.value = '';
-});
 
 // ---------- Tabs ----------
 document.querySelectorAll('nav.tabs button').forEach(btn=>{
